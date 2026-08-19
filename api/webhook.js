@@ -37,14 +37,13 @@ async function handle(from, body) {
   const msg = body.toLowerCase();
   const upd = d => sheet({ action: 'update', sheet: 'Users', match: { phone_number: from }, data: d });
 
-  if (msg === 'hi' || msg === 'hello' || msg === 'hey' || !user) {
+  if (msg === 'hi' || msg === 'hello' || !user) {
     if (!user) await sheet({ action: 'add', sheet: 'Users', data: { phone_number: from, trust_score: 5, current_state: 'awaiting_role', created_time: now() } });
     else await upd({ current_state: 'awaiting_role' });
     return 'Welcome to Agrolim Groceries Waste Bot! 🌱\nReply 1 = Restaurant\nReply 2 = Farmer';
   }
 
-  const state = String(user.current_state || '').trim();
-  const role = String(user.role || '').trim().toLowerCase();
+  const state = String(user.current_state || '');
 
   if (state === 'awaiting_role') {
     if (body === '1') { await upd({ role: 'Restaurant', current_state: 'awaiting_location' }); return 'Registered as Restaurant! 🍽️ What city/area are you in?'; }
@@ -77,8 +76,8 @@ async function handle(from, body) {
   }
 
   if (state === 'idle') {
-    if (msg === 'waste' && role === 'restaurant') { await upd({ current_state: 'awaiting_waste_type' }); return 'What type of waste?\nA - Cooked food\nB - Vegetable scraps\nC - Raw meat / dairy'; }
-    if (msg === 'yes' && role === 'farmer') {
+    if (msg === 'waste' && user.role === 'Restaurant') { await upd({ current_state: 'awaiting_waste_type' }); return 'What type of waste?\nA - Cooked food\nB - Vegetable scraps\nC - Raw meat / dairy'; }
+    if (msg === 'yes' && user.role === 'Farmer') {
       const m = await sheet({ action: 'find', sheet: 'Matches', match: { status: 'Open' } });
       const match = m.rows.find(r => String(r.location || '').toLowerCase() === String(user.location || '').toLowerCase()) || m.rows[0];
       if (!match) return 'No open waste right now — we will alert you when new waste is posted! 🌱';
@@ -87,7 +86,7 @@ async function handle(from, body) {
       await sendWhatsApp(match.restaurant_phone, `✅ Match! Farmer ${from} will collect your ${match.waste_kg} KG of ${match.waste_type} at ${match.pickup_window}. Farmer contact: ${from}`);
       return `✅ Matched! Restaurant contact: ${match.restaurant_phone}. Pickup: ${match.pickup_window}. Thank you for saving food! 🚜`;
     }
-    if (msg === 'feed' && role === 'farmer') return 'You are on the alert list! 🌱 We will message you when matching waste is posted in your area.';
+    if (msg === 'feed' && user.role === 'Farmer') return 'You are on the alert list! 🌱 We will message you when matching waste is posted in your area.';
     if (msg === 'help') return 'Menu:\nWASTE - post waste (restaurants)\nFEED - find waste (farmers)\nHELP - this menu';
     return 'Reply WASTE, FEED or HELP.';
   }
