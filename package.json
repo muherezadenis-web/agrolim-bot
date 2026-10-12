@@ -1,1 +1,6 @@
-{ "name": "agrolim-bot", "version": "1.0.0" }
+{
+  "name": "agrolim-bot",
+  "version": "2.1.0",
+  "private": true,
+  "type": "module"
+}
